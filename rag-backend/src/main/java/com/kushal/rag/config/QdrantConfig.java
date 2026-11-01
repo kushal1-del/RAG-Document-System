@@ -11,10 +11,17 @@ import io.qdrant.client.QdrantGrpcClient;
 public class QdrantConfig {
 
 	@Bean
-	public QdrantClient qdrantClient(@Value("${qdrant.host}") String host, @Value("${qdrant.port}") int port) {
+	public QdrantClient qdrantClient(@Value("${qdrant.host}") String host, @Value("${qdrant.port}") int port,
+			@Value("${qdrant.tls:false}") boolean useTls, @Value("${qdrant.api-key:}") String apiKey) {
 
-		QdrantGrpcClient grpcClient = QdrantGrpcClient.newBuilder(host, port, false).build();
+		// Local Docker Qdrant: no TLS, no API key.
+		// Qdrant Cloud: TLS on, API key required.
+		QdrantGrpcClient.Builder builder = QdrantGrpcClient.newBuilder(host, port, useTls);
 
-		return new QdrantClient(grpcClient);
+		if (apiKey != null && !apiKey.isBlank()) {
+			builder.withApiKey(apiKey);
+		}
+
+		return new QdrantClient(builder.build());
 	}
 }

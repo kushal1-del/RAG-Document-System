@@ -33,6 +33,9 @@ WORKDIR /app
 # Copy generated JAR
 COPY --from=build /app/target/*.jar app.jar
 
+# Keep the JVM small enough for a 512 MB host
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k"
+
 # Spring Boot port
 EXPOSE 8080
 

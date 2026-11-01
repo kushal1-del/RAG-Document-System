@@ -1,7 +1,9 @@
 package com.kushal.rag.config;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +22,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
 	private final JwtAuthFilter jwtAuthFilter;
+
+	@Value("${app.cors.allowed-origins}")
+	private String allowedOrigins;
 
 	public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
 		this.jwtAuthFilter = jwtAuthFilter;
@@ -41,7 +46,7 @@ public class SecurityConfig {
 
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**").permitAll()
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**", "/actuator/health/**").permitAll()
 						.requestMatchers("/api/admin/**").hasRole("ADMIN").anyRequest().authenticated())
 
 				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -54,13 +59,10 @@ public class SecurityConfig {
 
 		CorsConfiguration configuration = new CorsConfiguration();
 
-		// The frontend origins allowed to call this API.
-		// Update this list once you know your actual frontend URL(s)
-		// (e.g. "http://localhost:3000" for local dev,
-		// "https://yourapp.com" once deployed).
-		configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173" // common Vite dev
-																									// server port
-		));
+		// Allowed frontend origins come from CORS_ALLOWED_ORIGINS (comma-separated).
+		List<String> origins = Arrays.stream(allowedOrigins.split(",")).map(String::trim)
+				.filter(o -> !o.isEmpty()).toList();
+		configuration.setAllowedOrigins(origins);
 
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
